@@ -2,7 +2,7 @@ import StatusCodes from 'http-status-codes';
 import { Request, Response } from 'express';
 
 import ProfileDao from '@daos/Profile/ProfileDao.mock';
-import { paramMissingError, profileAlreadyExist } from '@shared/constants';
+import { paramMissingError, profileAlreadyExist, profileNotFound } from '@shared/constants';
 import Profile from '@entities/Profile';
 
 const profileDao = new ProfileDao();
@@ -12,8 +12,8 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
 /**
  * get exists profile or create new one.
  * 
- * @param req 
- * @param res 
+ * @param req LoginData
+ * @param res Profile
  * @returns 
  */
  export async function login(req: Request, res: Response) {
@@ -38,8 +38,8 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
 /**
  * create profile.
  * 
- * @param req 
- * @param res 
+ * @param req Profile
+ * @param res 200
  * @returns 
  */
  export async function create(req: Request, res: Response) {
@@ -64,28 +64,33 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
 /**
  * get profile.
  * 
- * @param req 
- * @param res 
+ * @param req Profile
+ * @param res Profile
  * @returns 
  */
  export async function get(req: Request, res: Response) {
     const { nickname } = req.params;
-    console.log(req.body);
-    if (!nickname) {
+    if (nickname.length == 0) {
         return res.status(BAD_REQUEST).json({
             error: paramMissingError,
         });
     }
-    console.log(nickname);
-    await profileDao.get(nickname);
-    return res.status(OK).json({nickname});
+    
+    let profile = await profileDao.get(nickname);
+    if (profile != null) {
+        return res.status(OK).json({profile});
+    } else {
+        return res.status(BAD_REQUEST).json({
+            error: profileNotFound,
+        });
+    }
 }
 
 /**
  * Update profile.
  * 
- * @param req 
- * @param res 
+ * @param req Profile
+ * @param res 200
  * @returns 
  */
 export async function update(req: Request, res: Response) {
