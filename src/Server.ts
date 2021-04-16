@@ -13,8 +13,6 @@ import logger from '@shared/Logger';
 const app = express();
 const { BAD_REQUEST } = StatusCodes;
 
-
-
 /************************************************************************************
  *                              Set basic express settings
  ***********************************************************************************/

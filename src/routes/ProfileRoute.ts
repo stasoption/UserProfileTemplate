@@ -1,7 +1,7 @@
 import StatusCodes from 'http-status-codes';
 import { Request, Response } from 'express';
 
-import ProfileDao from '@daos/Profile/ProfileDao.mock';
+import ProfileDao from '@daos/Profile/ProfileDao';
 import { paramMissingError, profileAlreadyExist, profileNotFound } from '@shared/constants';
 import Profile from '@entities/Profile';
 
@@ -39,7 +39,7 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
  * create profile.
  * 
  * @param req Profile
- * @param res 200
+ * @param res CREATED
  * @returns 
  */
  export async function create(req: Request, res: Response) {
@@ -51,7 +51,7 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
         });
     }
     
-    let localProfile = await profileDao.get(profile.nickname)
+    let localProfile = await profileDao.get(profile.nickname, false)
     if (localProfile != null) {
         return res.status(OK).json({
             error: profileAlreadyExist,
@@ -75,7 +75,6 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
             error: paramMissingError,
         });
     }
-    
     let profile = await profileDao.get(nickname);
     if (profile != null) {
         return res.status(OK).json({profile});
@@ -90,7 +89,7 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
  * Update profile.
  * 
  * @param req Profile
- * @param res 200
+ * @param res OK
  * @returns 
  */
 export async function update(req: Request, res: Response) {
