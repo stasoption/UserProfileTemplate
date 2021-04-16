@@ -17,8 +17,10 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
  */
  export async function create(req: Request, res: Response) {
     const { profile } = req.body;
-    console.log(profile.nickname);
+
+    console.log(req.body);
     
+
     if (!profile) {
         return res.status(BAD_REQUEST).json({
             error: paramMissingError,
