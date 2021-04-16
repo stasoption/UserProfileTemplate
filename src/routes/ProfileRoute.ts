@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 
 import ProfileDao from '@daos/Profile/ProfileDao.mock';
 import { paramMissingError, profileAlreadyExist } from '@shared/constants';
+import Profile from '@entities/Profile';
 
 const profileDao = new ProfileDao();
 const { BAD_REQUEST, CREATED, OK } = StatusCodes;
@@ -24,13 +25,13 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
         });
     }
     
-    let localProfile = await profileDao.get(loginData.nickname)
-    if (localProfile != null) {
-        return res.status(OK).json({localProfile});
+    let profile = await profileDao.get(loginData.nickname)
+    if (profile != null) {
+        return res.status(OK).json({profile});
     } else {
-        let newProfile = new Profile()
-        await profileDao.create(newProfile);
-        return res.status(CREATED).json({newProfile});
+        profile = new Profile(loginData.nickname)
+        await profileDao.create(profile);
+        return res.status(CREATED).json({profile});
     }
 }
 
@@ -97,8 +98,4 @@ export async function update(req: Request, res: Response) {
     }
     await profileDao.update(profile);
     return res.status(OK).end();
-}
-
-function Profile(nickname: string) {
-    throw new Error('Function not implemented.');
 }

@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { create, get, update } from './Profile';
+import { login, create, get, update } from './ProfileRoute';
 
 
 // profile-route
 const profileRouter = Router();
+profileRouter.post('/login', login);
 profileRouter.post('/create', create);
 profileRouter.get('/get/:nickname', get);
 profileRouter.put('/update', update);
