@@ -51,7 +51,7 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
         });
     }
     
-    let localProfile = await profileDao.get(profile.nickname, false)
+    let localProfile = await profileDao.get(profile.nickname)
     if (localProfile != null) {
         return res.status(OK).json({
             error: profileAlreadyExist,
