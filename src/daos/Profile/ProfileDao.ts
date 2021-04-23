@@ -1,22 +1,19 @@
-import Profile, { IProfile } from '@entities/Profile';
+import { IProfile } from '@entities/Profile';
 
 export interface IProfileDao {
-    create: (profile: IProfile) => Promise<void>;
-    get: (nickname: string) => Promise<IProfile | null>;
+    // getObject(done: (data: any, elapsedTime?: number) => void): void;
+
+
+    create(profile: IProfile, done: (isSuccess: boolean) => void): void;
+    get(nickname: string, done: (profile: Promise<IProfile | null>) => void): void;
     update: (profile: IProfile) => Promise<void>;
 }
 
-var dataBase: { collection: (arg0: string) => any; } | null = null
 const dbName = 'mongodb';
 const collectionName = 'profiles';
 const MongoClient = require(dbName).MongoClient;
-const assert = require('assert');
 const url = "mongodb+srv://stas:qwerty12345678@devprofilecluster.qc5ep.mongodb.net/Players?retryWrites=true&w=majority";
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-client.connect(() => {
-    dataBase = client.db(dbName);
-});
-
 
 class ProfileDao implements IProfileDao {
     
@@ -24,25 +21,44 @@ class ProfileDao implements IProfileDao {
      *
      * @param profile
      */
-    public async create(profile: IProfile): Promise<void> {
-            const collection = dataBase?.collection(collectionName);
-            return collection?.insertMany([{ profile }], function(err: string) {
-                assert.equal(err, null);
-                console.log(err)
-            });
+    public async create(profile: IProfile, callback: (isSuccess: boolean) => void) {
+        client.connect(() => {
+            try {
+                const dataBase = client.db(dbName);
+                const collection = dataBase?.collection(collectionName);
+                collection?.insertMany([{ profile }]);
+                callback(true)
+            } catch(err) {
+                console.log(err);
+                callback(false)
+            } 
+            // finally {
+            //     client.close()
+            // }
+        }); 
     }
 
      /**
      *
      * @param nickname
      */
-      public async get(nickname: string): Promise<IProfile | null> {
-        const collection = dataBase?.collection(collectionName);
-        const details =  { profile: { 'nickname': nickname } }
-        const profile = collection?.findOne(details)
-        console.log(profile);
-        return profile
- 
+      public async get(nickname: string, callback: (profile: Promise<IProfile | null>) => void) {
+        client.connect(async () => {
+            var profile = null
+            try {
+                const dataBase = client.db(dbName);
+                const collection = dataBase?.collection(collectionName);
+                const details =  { profile: { 'nickname': nickname } }
+                profile = await collection?.findOne(details)
+                callback(profile)
+            } catch(err) {
+                console.log(err);
+                callback(profile)
+            } 
+            // finally {
+            //     client.close()
+            // }
+        }); 
    }
 
     /**

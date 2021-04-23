@@ -2,8 +2,8 @@ import StatusCodes from 'http-status-codes';
 import { Request, Response } from 'express';
 
 import ProfileDao from '@daos/Profile/ProfileDao';
-import { paramMissingError, profileAlreadyExist, profileNotFound } from '@shared/constants';
-import Profile from '@entities/Profile';
+import { paramMissingError, profileAlreadyExist, profileNotFound, errorUnexpected } from '@shared/constants';
+import Profile, { IProfile } from '@entities/Profile';
 
 const profileDao = new ProfileDao();
 const { BAD_REQUEST, CREATED, OK } = StatusCodes;
@@ -18,6 +18,7 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
  */
  export async function login(req: Request, res: Response) {
     const { loginData } = req.body;
+    
     console.log(req.body);
     if (!loginData) {
         return res.status(BAD_REQUEST).json({
@@ -25,14 +26,20 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
         });
     }
     
-    let profile = await profileDao.get(loginData.nickname)
-    if (profile != null) {
-        return res.status(OK).json({profile});
-    } else {
-        profile = new Profile(loginData.nickname)
-        await profileDao.create(profile);
-        return res.status(CREATED).json({profile});
-    }
+    profileDao.get(loginData.nickname, async function(profile: Promise<IProfile | null> | null) {
+        if (profile != null) {
+            return res.status(OK).json({profile});
+        } else {
+            const newProfile = new Profile(loginData.nickname)
+            profileDao.create(newProfile, function(isSuccess: boolean) {
+                if (isSuccess) {
+                    return res.status(CREATED).json({newProfile});
+                } else {
+                    return res.status(BAD_REQUEST).json({ error: errorUnexpected });
+                }
+            });
+        }
+    });   
 }
 
 /**
@@ -46,19 +53,24 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
     const { profile } = req.body;
     console.log(req.body);
     if (!profile) {
-        return res.status(BAD_REQUEST).json({
-            error: paramMissingError,
-        });
+        return res.status(BAD_REQUEST).json({ error: paramMissingError });
     }
     
-    let localProfile = await profileDao.get(profile.nickname)
-    if (localProfile != null) {
-        return res.status(OK).json({
-            error: profileAlreadyExist,
-        });
-    }
-    await profileDao.create(profile);
-    return res.status(CREATED).end();
+    profileDao.get(profile.nickname, function(iprofile: Promise<IProfile | null> | null) {
+        console.log("IProfile:", iprofile);
+        if (iprofile != null) {
+            return res.status(BAD_REQUEST).json({ error: profileAlreadyExist, iprofile: Profile });
+        } else {
+            profileDao.create(profile, function(isSuccess: boolean) {
+                if (isSuccess) {
+                    console.log("isSuccess:", isSuccess);
+                    return res.status(CREATED).end();
+                } else {
+                    return res.status(BAD_REQUEST).json({ error: errorUnexpected });
+                }
+            });
+        }
+    })
 }
 
 /**
@@ -75,14 +87,13 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
             error: paramMissingError,
         });
     }
-    let profile = await profileDao.get(nickname);
-    if (profile != null) {
-        return res.status(OK).json({profile});
-    } else {
-        return res.status(BAD_REQUEST).json({
-            error: profileNotFound,
-        });
-    }
+    profileDao.get(nickname, function(profile: Promise<IProfile | null> | null) {
+        if (profile != null) {
+            return res.status(OK).json({ profile });
+        } else {
+            return res.status(BAD_REQUEST).json({ error: profileNotFound });
+        }
+    });
 }
 
 /**
