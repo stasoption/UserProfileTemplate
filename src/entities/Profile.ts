@@ -1,12 +1,16 @@
 export interface IProfile {
     nickname: string;
     email: string | null;
+    avatarUrl: string | null;
+    profileCreatedAt: number;
 }
 
 class Profile implements IProfile {
 
     public nickname: string;
-    public email: string | null;
+    public email: string | null = null;
+    public avatarUrl: string | null = null;
+    public profileCreatedAt: number;
 
     constructor(nameOrUser: string | IProfile) {
         if (typeof nameOrUser === 'string') {
@@ -14,7 +18,7 @@ class Profile implements IProfile {
         } else {
             this.nickname = nameOrUser.nickname;
         }
-        this.email = null
+        this.profileCreatedAt = Date.now()
     }
 }
 

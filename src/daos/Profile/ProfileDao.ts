@@ -3,7 +3,7 @@ import { IProfile } from '@entities/Profile';
 export interface IProfileDao {
     create(profile: IProfile, done: (createStatus: CreateStatus) => void): void;
     get(nickname: string, done: (profile: IProfile | GetErrorStatus) => void): void;
-    update(profile: IProfile): void;
+    update(profile: IProfile, done: (profile: IProfile | UpdateErrorStatus) => void): void;
 }
 
 export enum CreateStatus {
@@ -11,6 +11,10 @@ export enum CreateStatus {
 }
 
 export enum GetErrorStatus {
+    NOT_FOUND, FAIL, UNKNOWN
+}
+
+export enum UpdateErrorStatus {
     NOT_FOUND, FAIL, UNKNOWN
 }
 
@@ -77,7 +81,26 @@ class ProfileDao implements IProfileDao {
      *
      * @param profile
      */
-    public async update(profile: IProfile) { }
+    public async update(profile: IProfile, callback: (profile: IProfile | UpdateErrorStatus) => void) {
+        const database = await client.connect(); 
+        try {
+            const dataBase = database.db(dbName);
+            const collection = dataBase?.collection(collectionName);
+            const nickname = profile.nickname
+            const existedProfile = await collection?.findOne({ nickname })            
+            if (existedProfile == null) {
+                callback(UpdateErrorStatus.NOT_FOUND)
+            } else {
+                await collection?.replaceOne(nickname, profile)
+                callback(profile)
+            }     
+        } catch(err) {
+            console.log(err);
+            callback(UpdateErrorStatus.FAIL)
+        } finally {
+            // client.close()
+        } 
+     }
 }
 
 export default ProfileDao;

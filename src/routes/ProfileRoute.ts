@@ -1,7 +1,7 @@
 import StatusCodes from 'http-status-codes';
 import { Request, Response } from 'express';
 
-import ProfileDao, { CreateStatus, GetErrorStatus } from '@daos/Profile/ProfileDao';
+import ProfileDao, { CreateStatus, GetErrorStatus, UpdateErrorStatus } from '@daos/Profile/ProfileDao';
 import { paramMissingError, profileAlreadyExist, profileNotFound, errorUnexpected } from '@shared/constants';
 import Profile, { IProfile } from '@entities/Profile';
 
@@ -84,6 +84,19 @@ export async function update(req: Request, res: Response) {
             error: paramMissingError,
         });
     }
-    await profileDao.update(profile);
+    profileDao.update(profile, function(profile: IProfile | UpdateErrorStatus) {
+        const iprofile = profile as IProfile
+        if (iprofile) {
+            return res.status(OK).json({ profile });
+        }
+        switch (profile) {
+            case UpdateErrorStatus.NOT_FOUND: {
+                return res.status(BAD_REQUEST).json({ error: profileNotFound });
+            }
+            case UpdateErrorStatus.FAIL: {
+                return res.status(BAD_REQUEST).json({ error: errorUnexpected });
+            }
+        }
+    });
     return res.status(OK).end();
 }
