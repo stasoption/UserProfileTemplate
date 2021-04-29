@@ -1,7 +1,7 @@
 import StatusCodes from 'http-status-codes';
 import { Request, Response } from 'express';
 
-import ProfileDao, { CreateStatus } from '@daos/Profile/ProfileDao';
+import ProfileDao, { CreateStatus, GetErrorStatus } from '@daos/Profile/ProfileDao';
 import { paramMissingError, profileAlreadyExist, profileNotFound, errorUnexpected } from '@shared/constants';
 import Profile, { IProfile } from '@entities/Profile';
 
@@ -51,15 +51,21 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
  export async function get(req: Request, res: Response) {
     const { nickname } = req.params;
     if (nickname.length == 0) {
-        return res.status(BAD_REQUEST).json({
-            error: paramMissingError,
-        });
+        return res.status(BAD_REQUEST).json({ error: paramMissingError });
     }
-    profileDao.get(nickname, function(profile: IProfile | null) {
-        if (profile != null) {
+    profileDao.get(nickname, function(profile: IProfile | GetErrorStatus) {
+         console.log("result", profile);
+        const iprofile = profile as IProfile
+        if (iprofile) {
             return res.status(OK).json({ profile });
-        } else {
-            return res.status(BAD_REQUEST).json({ error: profileNotFound });
+        }
+        switch (profile) {
+            case GetErrorStatus.NOT_FOUND: {
+                return res.status(BAD_REQUEST).json({ error: profileNotFound });
+            }
+            case GetErrorStatus.FAIL: {
+                return res.status(BAD_REQUEST).json({ error: errorUnexpected });
+            }
         }
     });
 }

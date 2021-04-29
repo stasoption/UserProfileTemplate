@@ -2,12 +2,16 @@ import { IProfile } from '@entities/Profile';
 
 export interface IProfileDao {
     create(profile: IProfile, done: (createStatus: CreateStatus) => void): void;
-    get(nickname: string, done: (profile: IProfile | null) => void): void;
+    get(nickname: string, done: (profile: IProfile | GetErrorStatus) => void): void;
     update(profile: IProfile): void;
 }
 
 export enum CreateStatus {
-    SUCCESS, EXISTS, FAIL
+    SUCCESS, EXISTS, FAIL, UNKNOWN
+}
+
+export enum GetErrorStatus {
+    NOT_FOUND, FAIL, UNKNOWN
 }
 
 const dbName = 'mongodb';
@@ -23,44 +27,50 @@ class ProfileDao implements IProfileDao {
      * @param profile
      */
     public async create(profile: IProfile, callback: (createStatus: CreateStatus) => void) {
-        client.connect(async () => {
-            try {
-                const dataBase = client.db(dbName);
-                const collection = dataBase?.collection(collectionName);
-
-                const details =  { profile: { 'nickname': profile.nickname } }
-                const existedProfile = await collection?.findOne(details)
-                if (existedProfile != null) {
-                    callback(CreateStatus.EXISTS)
-                } else {
-                    await collection?.insertMany([{ profile }]); // insertOne
-                    callback(CreateStatus.SUCCESS)
-                }
-            } catch(err) {
-                console.log(err);
-                callback(CreateStatus.FAIL)
+        const database = await client.connect(); 
+        var createStatus = CreateStatus.UNKNOWN
+        try {
+            const dataBase = database.db(dbName);
+            const collection = dataBase?.collection(collectionName);
+            const nickname = profile.nickname
+            const existedProfile = await collection?.findOne({ nickname })
+            if (existedProfile != null) {
+                createStatus = CreateStatus.EXISTS
+            } else {
+                await collection.save(profile)
+                createStatus = CreateStatus.SUCCESS
             }
-        }); 
+            console.log("createStatus:", createStatus);
+        } catch(err) {
+            console.log(err);
+            createStatus = CreateStatus.FAIL
+        } finally {
+            // await client.close()
+            callback(createStatus)
+        }
     }
 
      /**
      *
      * @param nickname
      */
-      public async get(nickname: string, callback: (profile: IProfile | null) => void) {
-        client.connect(async () => {
-            var profile = null
-            try {
-                const dataBase = client.db(dbName);
-                const collection = dataBase?.collection(collectionName);
-                const details =  { profile: { 'nickname': nickname } }
-                profile = await collection?.findOne(details)
+      public async get(nickname: string, callback: (profile: IProfile | GetErrorStatus) => void) {
+        const database = await client.connect(); 
+        try {
+            const dataBase = database.db(dbName);
+            const collection = dataBase?.collection(collectionName);
+            const profile = await collection?.findOne({ nickname })            
+            if (profile == null) {
+                callback(GetErrorStatus.NOT_FOUND)
+            } else {
                 callback(profile)
-            } catch(err) {
-                console.log(err);
-                callback(null)
-            } 
-        }); 
+            }
+        } catch(err) {
+            console.log(err);
+            callback(GetErrorStatus.FAIL)
+        } finally {
+            // client.close()
+        } 
    }
 
     /**
