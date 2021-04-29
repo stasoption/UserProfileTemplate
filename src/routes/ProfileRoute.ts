@@ -54,7 +54,6 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
         return res.status(BAD_REQUEST).json({ error: paramMissingError });
     }
     profileDao.get(nickname, function(profile: IProfile | GetErrorStatus) {
-         console.log("result", profile);
         const iprofile = profile as IProfile
         if (iprofile) {
             return res.status(OK).json({ profile });
