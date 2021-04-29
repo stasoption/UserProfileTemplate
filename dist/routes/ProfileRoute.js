@@ -38,13 +38,6 @@ const constants_1 = require("@shared/constants");
 const Profile_1 = __importDefault(require("@entities/Profile"));
 const profileDao = new ProfileDao_1.default();
 const { BAD_REQUEST, CREATED, OK } = http_status_codes_1.default;
-/**
- * get exists profile or create new one.
- *
- * @param req LoginData
- * @param res Profile
- * @returns
- */
 function login(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const { loginData } = req.body;
@@ -72,13 +65,6 @@ function login(req, res) {
     });
 }
 exports.login = login;
-/**
- * get profile.
- *
- * @param req Profile
- * @param res Profile
- * @returns
- */
 function get(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const { nickname } = req.params;
@@ -102,24 +88,27 @@ function get(req, res) {
     });
 }
 exports.get = get;
-/**
- * Update profile.
- *
- * @param req Profile
- * @param res OK
- * @returns
- */
 function update(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const { profile } = req.body;
         console.log(req.body);
         if (!profile) {
-            return res.status(BAD_REQUEST).json({
-                error: constants_1.paramMissingError,
-            });
+            return res.status(BAD_REQUEST).json({ error: constants_1.paramMissingError });
         }
-        yield profileDao.update(profile);
-        return res.status(OK).end();
+        profileDao.update(profile, function (profile) {
+            const iprofile = profile;
+            if (iprofile) {
+                return res.status(OK).json({ profile });
+            }
+            switch (profile) {
+                case ProfileDao_1.UpdateErrorStatus.NOT_FOUND: {
+                    return res.status(BAD_REQUEST).json({ error: constants_1.profileNotFound });
+                }
+                case ProfileDao_1.UpdateErrorStatus.FAIL: {
+                    return res.status(BAD_REQUEST).json({ error: constants_1.errorUnexpected });
+                }
+            }
+        });
     });
 }
 exports.update = update;

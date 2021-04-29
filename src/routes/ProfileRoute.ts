@@ -8,14 +8,6 @@ import Profile, { IProfile } from '@entities/Profile';
 const profileDao = new ProfileDao();
 const { BAD_REQUEST, CREATED, OK } = StatusCodes;
 
-
-/**
- * get exists profile or create new one.
- * 
- * @param req LoginData
- * @param res Profile
- * @returns 
- */
  export async function login(req: Request, res: Response) {
     const { loginData } = req.body;
     console.log(req.body);
@@ -41,13 +33,6 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
     });  
 }
 
-/**
- * get profile.
- * 
- * @param req Profile
- * @param res Profile
- * @returns 
- */
  export async function get(req: Request, res: Response) {
     const { nickname } = req.params;
     if (nickname.length == 0) {
@@ -69,20 +54,11 @@ const { BAD_REQUEST, CREATED, OK } = StatusCodes;
     });
 }
 
-/**
- * Update profile.
- * 
- * @param req Profile
- * @param res OK
- * @returns 
- */
 export async function update(req: Request, res: Response) {
     const { profile } = req.body;
     console.log(req.body);
     if (!profile) {
-        return res.status(BAD_REQUEST).json({
-            error: paramMissingError,
-        });
+        return res.status(BAD_REQUEST).json({ error: paramMissingError });
     }
     profileDao.update(profile, function(profile: IProfile | UpdateErrorStatus) {
         const iprofile = profile as IProfile
@@ -98,5 +74,4 @@ export async function update(req: Request, res: Response) {
             }
         }
     });
-    return res.status(OK).end();
 }

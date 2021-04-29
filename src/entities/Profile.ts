@@ -3,6 +3,7 @@ export interface IProfile {
     email: string | null;
     avatarUrl: string | null;
     profileCreatedAt: number;
+    titles: Array<String> | null;
 }
 
 class Profile implements IProfile {
@@ -11,6 +12,7 @@ class Profile implements IProfile {
     public email: string | null = null;
     public avatarUrl: string | null = null;
     public profileCreatedAt: number;
+    public titles : Array<String> | null = null
 
     constructor(nameOrUser: string | IProfile) {
         if (typeof nameOrUser === 'string') {

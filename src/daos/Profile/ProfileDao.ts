@@ -26,10 +26,6 @@ const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology:
 
 class ProfileDao implements IProfileDao {
     
-    /**
-     *
-     * @param profile
-     */
     public async create(profile: IProfile, callback: (createStatus: CreateStatus) => void) {
         const database = await client.connect(); 
         var createStatus = CreateStatus.UNKNOWN
@@ -54,11 +50,7 @@ class ProfileDao implements IProfileDao {
         }
     }
 
-     /**
-     *
-     * @param nickname
-     */
-      public async get(nickname: string, callback: (profile: IProfile | GetErrorStatus) => void) {
+    public async get(nickname: string, callback: (profile: IProfile | GetErrorStatus) => void) {
         const database = await client.connect(); 
         try {
             const dataBase = database.db(dbName);
@@ -77,21 +69,19 @@ class ProfileDao implements IProfileDao {
         } 
    }
 
-    /**
-     *
-     * @param profile
-     */
     public async update(profile: IProfile, callback: (profile: IProfile | UpdateErrorStatus) => void) {
         const database = await client.connect(); 
         try {
             const dataBase = database.db(dbName);
             const collection = dataBase?.collection(collectionName);
             const nickname = profile.nickname
-            const existedProfile = await collection?.findOne({ nickname })            
+            const existedProfile = await collection?.findOne({ nickname })   
+            console.log("existedProfile:", existedProfile);
+                     
             if (existedProfile == null) {
                 callback(UpdateErrorStatus.NOT_FOUND)
             } else {
-                await collection?.replaceOne(nickname, profile)
+                await collection?.replaceOne({ nickname }, profile)
                 callback(profile)
             }     
         } catch(err) {

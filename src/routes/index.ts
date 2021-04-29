@@ -6,7 +6,7 @@ import { login, get, update } from './ProfileRoute';
 const profileRouter = Router();
 profileRouter.post('/login', login);
 profileRouter.get('/get/:nickname', get);
-profileRouter.put('/update', update);
+profileRouter.post('/update', update);
 
 // Export the base-router
 const baseRouter = Router();
