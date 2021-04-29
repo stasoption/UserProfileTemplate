@@ -27,26 +27,57 @@ class ProfileDao implements IProfileDao {
      * @param profile
      */
     public async create(profile: IProfile, callback: (createStatus: CreateStatus) => void) {
-        const database = await client.connect(); 
-        var createStatus = CreateStatus.UNKNOWN
+        // const database = await client.connect(); 
+        // var createStatus = CreateStatus.UNKNOWN
+        // try {
+        //     const dataBase = database.db(dbName);
+        //     const collection = dataBase?.collection(collectionName);
+        //     const nickname = profile.nickname
+        //     const existedProfile = await collection?.findOne({ nickname })
+            // if (existedProfile != null) {
+            //     createStatus = CreateStatus.EXISTS
+            // } else {
+            //     await collection.save(profile)
+            //     createStatus = CreateStatus.SUCCESS
+            // }
+            // console.log("createStatus:", createStatus);
+        // } catch(err) {
+        //     console.log(err);
+        //     createStatus = CreateStatus.FAIL
+        // } finally {
+        //     // await client.close()
+        //     callback(createStatus)
+        // }
+
+
         try {
+            const database = await client.connect(); 
             const dataBase = database.db(dbName);
             const collection = dataBase?.collection(collectionName);
-            const nickname = profile.nickname
-            const existedProfile = await collection?.findOne({ nickname })
-            if (existedProfile != null) {
-                createStatus = CreateStatus.EXISTS
-            } else {
-                await collection.save(profile)
-                createStatus = CreateStatus.SUCCESS
-            }
-            console.log("createStatus:", createStatus);
+            console.log("collection:", collection);
+
+            await new Promise<IProfile>((resolve, reject) => {
+                const nickname = profile.nickname
+               resolve(collection?.findOne({ nickname }))
+            })
+            .then(existedProfile => {
+                console.log("existedProfile:", existedProfile);
+                var createStatus = CreateStatus.UNKNOWN
+                if (existedProfile != null) {
+                    createStatus = CreateStatus.EXISTS
+                } else {
+                    collection.save(profile)
+                    createStatus = CreateStatus.SUCCESS
+                }
+                console.log("createStatus:", createStatus);
+                callback(createStatus)
+            })
+            .catch(error => {
+                console.log('error', error);
+            });
         } catch(err) {
             console.log(err);
-            createStatus = CreateStatus.FAIL
-        } finally {
-            // await client.close()
-            callback(createStatus)
+            callback(CreateStatus.FAIL)
         }
     }
 
