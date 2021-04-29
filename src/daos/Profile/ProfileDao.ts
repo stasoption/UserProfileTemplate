@@ -1,12 +1,13 @@
 import { IProfile } from '@entities/Profile';
 
 export interface IProfileDao {
-    // getObject(done: (data: any, elapsedTime?: number) => void): void;
+    create(profile: IProfile, done: (createStatus: CreateStatus) => void): void;
+    get(nickname: string, done: (profile: IProfile | null) => void): void;
+    update(profile: IProfile): void;
+}
 
-
-    create(profile: IProfile, done: (isSuccess: boolean) => void): void;
-    get(nickname: string, done: (profile: Promise<IProfile | null>) => void): void;
-    update: (profile: IProfile) => Promise<void>;
+export enum CreateStatus {
+    SUCCESS, EXISTS, FAIL
 }
 
 const dbName = 'mongodb';
@@ -21,20 +22,24 @@ class ProfileDao implements IProfileDao {
      *
      * @param profile
      */
-    public async create(profile: IProfile, callback: (isSuccess: boolean) => void) {
-        client.connect(() => {
+    public async create(profile: IProfile, callback: (createStatus: CreateStatus) => void) {
+        client.connect(async () => {
             try {
                 const dataBase = client.db(dbName);
                 const collection = dataBase?.collection(collectionName);
-                collection?.insertMany([{ profile }]);
-                callback(true)
+
+                const details =  { profile: { 'nickname': profile.nickname } }
+                const existedProfile = await collection?.findOne(details)
+                if (existedProfile != null) {
+                    callback(CreateStatus.EXISTS)
+                } else {
+                    await collection?.insertMany([{ profile }]); // insertOne
+                    callback(CreateStatus.SUCCESS)
+                }
             } catch(err) {
                 console.log(err);
-                callback(false)
-            } 
-            // finally {
-            //     client.close()
-            // }
+                callback(CreateStatus.FAIL)
+            }
         }); 
     }
 
@@ -42,7 +47,7 @@ class ProfileDao implements IProfileDao {
      *
      * @param nickname
      */
-      public async get(nickname: string, callback: (profile: Promise<IProfile | null>) => void) {
+      public async get(nickname: string, callback: (profile: IProfile | null) => void) {
         client.connect(async () => {
             var profile = null
             try {
@@ -53,11 +58,8 @@ class ProfileDao implements IProfileDao {
                 callback(profile)
             } catch(err) {
                 console.log(err);
-                callback(profile)
+                callback(null)
             } 
-            // finally {
-            //     client.close()
-            // }
         }); 
    }
 
@@ -65,10 +67,7 @@ class ProfileDao implements IProfileDao {
      *
      * @param profile
      */
-    public async update(profile: IProfile): Promise<void> {
-         // TODO
-        return Promise.resolve(undefined);
-    }
+    public async update(profile: IProfile) { }
 }
 
 export default ProfileDao;
